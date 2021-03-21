@@ -36,10 +36,6 @@ tsize_t _tiffReadProc(thandle_t hdata, tdata_t buf, tsize_t size) {
     TRACE(("_tiffReadProc: %d \n", (int)size));
     dump_state(state);
 
-    if (state->loc > state->eof) {
-        TIFFError("_tiffReadProc", "Invalid Read at loc %d, eof: %d", state->loc, state->eof);
-        return 0;
-    }
     to_read = min(size, min(state->size, (tsize_t)state->eof) - (tsize_t)state->loc);
     TRACE(("to_read: %d\n", (int)to_read));
 
@@ -190,6 +186,15 @@ int ReadTile(TIFF* tiff, UINT32 col, UINT32 row, UINT32* buffer) {
         swap_line_size = tile_width * sizeof(UINT32);
         if (tile_width != swap_line_size / sizeof(UINT32)) {
             return -1;
+        }
+
+        /* Sanity Check. Apparently in some cases, the TiffReadRGBA* functions
+           have a different view of the size of the tiff than we're getting from
+           other functions. So, we need to check here.
+        */
+        if (!TIFFCheckTile(tiff, col, row, 0, 0)) {
+            TRACE(("Check Tile Error, Tile at %dx%d\n", x, y));
+            return -1;;
         }
 
         /* Read the tile into an RGBA array */
