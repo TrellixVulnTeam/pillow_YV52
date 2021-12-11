@@ -753,3 +753,15 @@ def test_render_mono_size():
 
     draw.text((10, 10), "r" * 10, "black", ttf)
     assert_image_equal_tofile(im, "Tests/images/text_mono.gif")
+
+@pytest.mark.parametrize(
+    "test_file",
+    [
+        "Tests/fonts/oom-e8e927ba6c0d38274a37c1567560eb33baf74627.ttf",
+    ],
+)
+def test_oom(test_file):
+    with open(test_file, "rb") as f:
+        font = ImageFont.truetype(BytesIO(f.read()))
+        with pytest.raises(Image.DecompressionBombError):
+            font.getmask("Test Text")
